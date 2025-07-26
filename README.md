@@ -11,6 +11,7 @@ Installed packages in Spyder: pyvisa, numpy, matplotlib, re, time.
 
 The make plot function allows you to generate a number of plots from the spectrum analyzer using various arguments. Each argument has a default value, and any of the arguments of datatype string (str) are case insensitive.  
 The function: MakePlot (**MD**, **AD**, **SP**, **SENS**, **IM**, **PM**, **PHAS**)  
+
 **MD** (Frequency Select **M**o**D**e) accepts integers 1-4, defaults to 1. The modes can be found in the attached PDF and are:
 1. 0 to 25 kHz
 2. 0 to **SP**
@@ -18,6 +19,7 @@ The function: MakePlot (**MD**, **AD**, **SP**, **SENS**, **IM**, **PM**, **PHAS
 4. **AD**-0.5$$\times$$**SP** to **AD**+0.5$$\times$$**SP**
 
 **AD** (Frequency **AD**just) accepts integers 0-24999 and is in Hz, defaults to 0 (Note: **AD** *MUST* be 0 for **MD** 1 and 2.)  
+
 **SP** (Frequency **SP**an) accepts integers 1-14, defaults to 14. The spans can be found in the attached PDF and are:  
 1. 1Hz
 2. 2.5Hz
