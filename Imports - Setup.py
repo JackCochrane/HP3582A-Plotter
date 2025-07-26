@@ -49,10 +49,12 @@ def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PH
         raise TypeError("IM and PM must be strings")
     IM = IM.lower()
     if IM != 'bodefull' and IM != 'bodehalf' and IM != 'a' and IM != 'b' and IM != 'bothhalf' and IM != 'bothfull':
-        raise ValueError("IM must be 'half' 'full' 'a' 'b' 'bothhalf' or 'bothfull")
+        raise ValueError("IM must be 'bodehalf' 'bodefull' 'a' 'b' 'bothhalf' or 'bothfull'")
     PM = PM.lower()
     if PM != 'lin' and PM != 'logx' and PM != 'log' and PM != 'logy' and PM != 'logxy':
         raise ValueError("PM must be 'lin' 'log' 'logx' 'logy' or 'logxy'")
+    if (MD == (1 or 2)) and AD != 0:
+        raise ValueError("In MD 1 or 2 AD must be 0")
     
     #Set the instrument to known values
     SA.write('PRS')
@@ -60,7 +62,7 @@ def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PH
     #Implement the range and sensitivity selections
     SA.write('MD' + str(MD) + 'AD' + str(AD) + 'SP' + str(SP) + 'AS' + str(SENS) + 'BS' + str(SENS))
     
-    #Generate y array
+    #Generate y array, time.sleep is there because SA is old and slow
     if PHAS == 0:
         if IM == 'bodefull':
             AValues = SA.query_ascii_values('LDS', container=numpy.array)
