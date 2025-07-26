@@ -4,8 +4,8 @@ For use in Spyder IDE, initializes connection with the HP3582A and creates the M
 
 # External Requirements
 
-Installed from NI: NI-Visa, NI-488.2  
-Installed packages in Spyder: pyvisa, numpy, matplotlib, re, time
+Installed from NI: NI-Visa, NI-488.2.  
+Installed packages in Spyder: pyvisa, numpy, matplotlib, re, time.
 
 # MakePlot function
 
