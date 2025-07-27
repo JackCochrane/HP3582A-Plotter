@@ -13,25 +13,25 @@ import matplotlib.pyplot as plt
 import re
 import time
 
-rm = pyvisa.ResourceManager() #Assigns the resource manager to an easier to use form
+def initialize ():
+    rm = pyvisa.ResourceManager() #Assigns the resource manager to an easier to use form
+    
+    resource_tuple = rm.list_resources() #Gets a tuple with resources available to pyvisa
+    
+    #This loop iterates through the tuple retuned by list_resources to find the instrument using GPIB
+    #Then connects to it, assigning it to SA or 'Spectrum Analyzer'
+    for x in resource_tuple: 
+        if re.search("^GPIB", x) != None:
+            SA = rm.open_resource(x)
+            break
+    
+    SA.read_termination = '\r\n' #Correctly sets the read termination
+    SA.write_termination = '\r\n' #Correctly sets the write termination
+    
+    SA.write('PRS') #Sets the spectrum analyzer into preset state
+    return rm, SA
 
-resource_tuple = rm.list_resources() #Gets a tuple with resources available to pyvisa
-
-#This loop iterates through the tuple retuned by list_resources to find the instrument using GPIB
-#Then connects to it, assigning it to SA or 'Spectrum Analyzer'
-for x in resource_tuple: 
-    if re.search("^GPIB", x) != None:
-        SA = rm.open_resource(x)
-        del x
-        del resource_tuple
-        break
-
-SA.read_termination = '\r\n' #Correctly sets the read termination
-SA.write_termination = '\r\n' #Correctly sets the write termination
-
-SA.write('PRS') #Sets the spectrum analyzer into preset state
-
-def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PHAS = 0):
+def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PHAS = 0):
     #Checking for error states from the given inputs
     if not (type(MD) or type(AD) or type(SP) or type(SENS) or type(PHAS)) is int:
         raise TypeError("MD, AD, SP, and SENS must all be integers")
@@ -48,16 +48,16 @@ def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PH
     if not (type(IM) or type(PM)) is str:
         raise TypeError("IM and PM must be strings")
     IM = IM.lower()
-    if IM != 'bodefull' and IM != 'bodehalf' and IM != 'a' and IM != 'b' and IM != 'bothhalf' and IM != 'bothfull':
+    if IM not in {'bodefull', 'bodehalf', 'a', 'b', 'bothhalf', 'bothfull'}:
         raise ValueError("IM must be 'bodehalf' 'bodefull' 'a' 'b' 'bothhalf' or 'bothfull'")
     PM = PM.lower()
-    if PM != 'lin' and PM != 'logx' and PM != 'log' and PM != 'logy' and PM != 'logxy':
+    if PM not in {'lin', 'logx', 'log', 'logy', 'logxy'}:
         raise ValueError("PM must be 'lin' 'log' 'logx' 'logy' or 'logxy'")
-    if (MD == (1 or 2)) and AD != 0:
+    if MD in {1, 2} and AD != 0:
         raise ValueError("In MD 1 or 2 AD must be 0")
-    
-    #Set the instrument to known values
-    SA.write('PRS')
+        
+    #Initialize the connection, assigns rm, SA
+    rm, SA = initialize()
     
     #Implement the range and sensitivity selections
     SA.write('MD' + str(MD) + 'AD' + str(AD) + 'SP' + str(SP) + 'AS' + str(SENS) + 'BS' + str(SENS))
@@ -71,13 +71,11 @@ def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PH
             time.sleep(0.5)
             BValues = SA.query_ascii_values('LDS', container=numpy.array)
             YValues = BValues / AValues
-            del BValues, AValues
         elif IM == 'bodehalf':
             SA.write('IM2AB1')
             time.sleep(0.5)
             AValues, BValues = numpy.split(SA.query_ascii_values('LDS', container=numpy.array), 2)
             YValues = BValues / AValues
-            del BValues, AValues
         elif IM == 'a':
             YValues = SA.query_ascii_values('LDS', container=numpy.array)
         elif IM == 'b':
@@ -103,13 +101,11 @@ def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PH
             time.sleep(0.5)
             BValues = SA.query_ascii_values('LDS', container=numpy.array)
             YValues = BValues / AValues
-            del BValues, AValues
         elif IM == 'bodehalf':
             SA.write('IM2PB1')
             time.sleep(0.5)
             AValues, BValues = numpy.split(SA.query_ascii_values('LDS', container=numpy.array), 2)
             YValues = BValues / AValues
-            del BValues, AValues
         elif IM == 'a':
             YValues = SA.query_ascii_values('LDS', container=numpy.array)
         elif IM == 'b':
@@ -145,6 +141,7 @@ def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PH
             ax.semilogy(FreqValues, YValues)
         else:
             ax.loglog(FreqValues, YValues)
+        return_values = [FreqValues, YValues]
     else:
         fig, axs = plt.subplots(2, sharex=True)
         axs[0].set_title('Plot of A')
@@ -161,7 +158,10 @@ def MakePlot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PH
         else:
             axs[0].loglog(FreqValues, YValues)
             axs[1].loglog(FreqValues, YYValues)
+        return_values = [FreqValues, YValues, YYValues]
     
+    #return a list with the x/y arrays inside of it
+    return return_values
     
     
 
