@@ -7,9 +7,13 @@ For use in Spyder IDE, initializes connection with the HP3582A and creates the M
 Installed from NI: NI-Visa, NI-488.2.  
 Installed packages in Spyder: pyvisa, numpy, matplotlib, re, time.
 
-# MakePlot function
+# initialize function  
 
-The make plot function allows you to generate a number of plots from the spectrum analyzer using various arguments. Each argument has a default value, and any of the arguments of datatype string (str) are case insensitive.  
+Has no arguments, returns a resource manager object, and an instrument object of the first GPIB instrument found in that resource manager.  
+
+# make_plot function  
+
+The make plot function allows you to generate a number of plots from the spectrum analyzer using various arguments. Each argument has a default value, and any of the arguments of datatype string (str) are case insensitive. It will return a list with the requested variables in a list of 2-3 arrays.   
 The function: MakePlot (**MD**, **AD**, **SP**, **SENS**, **IM**, **PM**, **PHAS**)  
 
 **MD** (Frequency Select **M**o**D**e) accepts integers 1-4, defaults to 1. The modes can be found in the attached PDF and are:
