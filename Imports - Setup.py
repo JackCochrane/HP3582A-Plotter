@@ -31,10 +31,10 @@ def initialize ():
     SA.write('PRS') #Sets the spectrum analyzer into preset state
     return rm, SA
 
-def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PHAS = 0):
+def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PHAS = 0, line = 1, point_mark = 0):
     #Checking for error states from the given inputs
-    if not (type(MD) or type(AD) or type(SP) or type(SENS) or type(PHAS)) is int:
-        raise TypeError("MD, AD, SP, and SENS must all be integers")
+    if not (type(MD) or type(AD) or type(SP) or type(SENS) or type(PHAS) or type(line) or type (point_mark)) is int:
+        raise TypeError("MD, AD, SP, SENS, line, and point_mark must all be integers")
     if MD<1 or MD>4:
         raise ValueError("MD must be between 1-4")
     if AD<0 or AD>24999:
@@ -45,6 +45,10 @@ def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', P
         raise ValueError("SENS must be 1-10")
     if PHAS<0 or PHAS>1:
         raise ValueError("PHAS must be 0 or 1")
+    if line<0 or line<1:
+        raise ValueError("line must be 0 or 1")
+    if point_mark<0 or point_mark>1:
+        raise ValueError("point_mark must be 0 or 1")
     if not (type(IM) or type(PM)) is str:
         raise TypeError("IM and PM must be strings")
     IM = IM.lower()
@@ -131,33 +135,40 @@ def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', P
         FreqValues = numpy.linspace (SA.query_ascii_values('LAD')[0], SA.query_ascii_values('LSP')[0] + SA.query_ascii_values('LAD')[0], num = YValues.size)
         
     #Generate the plot
+    #Sets the line and point types
+    line_point = ''
+    if line == 1:
+        line_point = line_point + '-'
+    if point_mark == 1:
+        line_point = line_point + 'o'
+    
     if IM != 'bothhalf' and IM != 'bothfull':
         fig, ax = plt.subplots()
         if PM == 'lin':
-            ax.plot(FreqValues, YValues)
+            ax.plot(FreqValues, YValues, line_point)
         elif PM == 'log' or PM == 'logx':
-            ax.semilogx(FreqValues, YValues)
+            ax.semilogx(FreqValues, YValues, line_point)
         elif PM == 'logy':
-            ax.semilogy(FreqValues, YValues)
+            ax.semilogy(FreqValues, YValues, line_point)
         else:
-            ax.loglog(FreqValues, YValues)
+            ax.loglog(FreqValues, YValues, line_point)
         return_values = [FreqValues, YValues]
     else:
         fig, axs = plt.subplots(2, sharex=True)
         axs[0].set_title('Plot of A')
         axs[1].set_title('Plot of B')
         if PM == 'lin':
-            axs[0].plot(FreqValues, YValues)
-            axs[1].plot(FreqValues, YYValues)
+            axs[0].plot(FreqValues, YValues, line_point)
+            axs[1].plot(FreqValues, YYValues, line_point)
         elif PM == 'log' or PM == 'logx':
-            axs[0].semilogx(FreqValues, YValues)
-            axs[1].semilogx(FreqValues, YYValues)
+            axs[0].semilogx(FreqValues, YValues, line_point)
+            axs[1].semilogx(FreqValues, YYValues, line_point)
         elif PM == 'logy':
-            axs[0].semilogy(FreqValues, YValues)
-            axs[1].semilogy(FreqValues, YYValues)
+            axs[0].semilogy(FreqValues, YValues, line_point)
+            axs[1].semilogy(FreqValues, YYValues, line_point)
         else:
-            axs[0].loglog(FreqValues, YValues)
-            axs[1].loglog(FreqValues, YYValues)
+            axs[0].loglog(FreqValues, YValues, line_point)
+            axs[1].loglog(FreqValues, YYValues, line_point)
         return_values = [FreqValues, YValues, YYValues]
     
     #return a list with the x/y arrays inside of it
