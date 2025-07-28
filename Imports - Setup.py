@@ -134,14 +134,16 @@ def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', P
     else:
         FreqValues = numpy.linspace (SA.query_ascii_values('LAD')[0], SA.query_ascii_values('LSP')[0] + SA.query_ascii_values('LAD')[0], num = YValues.size)
         
-    #Generate the plot
     #Sets the line and point types
     line_point = ''
     if line == 1:
         line_point = line_point + '-'
     if point_mark == 1:
         line_point = line_point + 'o'
+    if 1 not in {line, point_mark}:
+        line_point = '-'
     
+    #Generate the plot
     if IM != 'bothhalf' and IM != 'bothfull':
         fig, ax = plt.subplots()
         if PM == 'lin':
