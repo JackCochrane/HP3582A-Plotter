@@ -65,8 +65,11 @@ The function: MakePlot (**MD**, **AD**, **SP**, **SENS**, **IM**, **PM**, **PHAS
 - 'logy'. Which makes all y axes log scale.
 - 'logxy'. Which makes all axes log scale.
 
-**PHAS** (CH A **PHAS**e and CH B **PHAS**e) accepts 0 and 1, defaults to 0. If 0 the amplitude will be plotted. If 1 the phase will be plotted.
+**PHAS** (CH A **PHAS**e and CH B **PHAS**e) accepts 0 and 1, defaults to 0. If 0 the amplitude will be plotted. If 1 the phase will be plotted.  
 
+**line** accepts 0 or 1, defaults to 1. Determines if the datapoints are connected or not.   
+
+**point_mark** accepts 0 or 1, defaults to 0. Determines if the datapoints are marked by a dot or not. 
 
 
 
