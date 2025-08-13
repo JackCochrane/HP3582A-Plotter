@@ -15,6 +15,9 @@ from matplotlib.figure import Figure
 import pyvisa 
 import numpy as np
 import time
+from pathlib import Path
+from datetime import datetime, timezone
+
 
 #Called by the im checkboxes to ensure that only two cam be selected at any given time
 def toggle_im_enable ():
@@ -234,7 +237,6 @@ def preset_values ():
     repetative.configure(relief=tk.SUNKEN)
     number_shift.configure(relief=tk.RAISED)
     
-    
 #Toggles the display of data points, also used to refresh the display without changing data
 def toggle_data_points ():
     #Clear the figure generate axs to put data in, create axes
@@ -282,7 +284,11 @@ def set_ref_level ():
 #Exports/saves data
 def export_data ():
     #figure_vars element tuple (index, ((name, on/off, datatype,) data array))
-    export_name  = file_name_var.get() + '.csv'
+    if file_name_var.get() == '' or file_name_var.get().isspace():
+        export_name = 'SA_data/data_set_' + datetime.now(timezone.utc).astimezone().strftime("%Y-%m-%d_T%H-%M-%S") + '.csv'
+    else:
+        export_name = 'SA_data/' + file_name_var.get() + '.csv'
+
     if two_vars:
         export_array = np.rot90(np.array([figure_vars[0][1][1], figure_vars[1][1][1], freq_vals]))
         export_header = figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2] + ',' + figure_vars[1][1][0][0][0] + ' ' + figure_vars[1][1][0][2] + ',' + ' Frequency (Hz)'
@@ -301,6 +307,11 @@ def toggle_button (button, button_var):
         button.configure(relief=tk.SUNKEN)
         button_var.set(1)
 
+
+#Create data storage folders if they do not exist already
+path_string = "SA_data"
+path = Path(path_string)
+path.mkdir(parents=False, exist_ok=True)
 
 #Makes the resource manager then spectrum analyzer(SA) objects
 rm = pyvisa.ResourceManager()
@@ -353,6 +364,7 @@ alphanumerics_var = tk.StringVar(value = SA.query('LAN'))
 data_points_var = tk.BooleanVar(value=False)
 ref_level_var = tk.IntVar(value=0)
 file_name_var = tk.StringVar(value='')
+file_counter = 0
 
 #Make a frame to put the display into
 display = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
