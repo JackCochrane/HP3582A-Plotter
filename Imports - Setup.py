@@ -8,7 +8,7 @@ Run this file to use the MakePlot function to get data from the Spectrum Analyze
 """
 
 import pyvisa 
-import numpy
+import numpy as np
 import matplotlib.pyplot as plt
 import re
 import time
@@ -27,13 +27,11 @@ def initialize ():
     
     SA.read_termination = '\r\n' #Correctly sets the read termination
     SA.write_termination = '\r\n' #Correctly sets the write termination
-    
-    SA.write('PRS') #Sets the spectrum analyzer into preset state
     return rm, SA
 
-def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', PHAS = 0, line = 1, point_mark = 0):
+def make_plot (MD = 1, AD = 0, SP = 14, IM = 'bodefull', PM = 'lin', PHAS = 0, line = 1, point_mark = 0):
     #Checking for error states from the given inputs
-    if not (type(MD) or type(AD) or type(SP) or type(SENS) or type(PHAS) or type(line) or type (point_mark)) is int:
+    if not (type(MD) or type(AD) or type(SP) or type(PHAS) or type(line) or type (point_mark)) is int:
         raise TypeError("MD, AD, SP, SENS, line, and point_mark must all be integers")
     if MD<1 or MD>4:
         raise ValueError("MD must be between 1-4")
@@ -41,8 +39,6 @@ def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', P
         raise ValueError("AD must be between 0-24999")
     if SP<1 or SP>14:
         raise ValueError("SP must be 1-14")
-    if SENS<1 or SENS>10:
-        raise ValueError("SENS must be 1-10")
     if PHAS<0 or PHAS>1:
         raise ValueError("PHAS must be 0 or 1")
     if line<0 or line<1:
@@ -60,79 +56,81 @@ def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', P
     if MD in {1, 2} and AD != 0:
         raise ValueError("In MD 1 or 2 AD must be 0")
         
-    #Initialize the connection, assigns rm, SA
+    #Initialize the connection, sets to PRS
     rm, SA = initialize()
+    SA.write('PRS')
     
-    #Implement the range and sensitivity selections
-    SA.write('MD' + str(MD) + 'AD' + str(AD) + 'SP' + str(SP) + 'AS' + str(SENS) + 'BS' + str(SENS))
+    #Implement the range selection and sets the sensitivity
+    SA.write('MD' + str(MD) + 'AD' + str(AD) + 'SP' + str(SP))
+    set_sensitivity()
     
     #Generate y array, time.sleep is there because SA is old and slow
     if PHAS == 0:
         if IM == 'bodefull':
-            AValues = SA.query_ascii_values('LDS', container=numpy.array)
+            AValues = SA.query_ascii_values('LDS', container=np.array)
             time.sleep(0.5)
             SA.write('IM3AA0AB1')
             time.sleep(0.5)
-            BValues = SA.query_ascii_values('LDS', container=numpy.array)
+            BValues = SA.query_ascii_values('LDS', container=np.array)
             YValues = BValues / AValues
         elif IM == 'bodehalf':
             SA.write('IM2AB1')
             time.sleep(0.5)
-            AValues, BValues = numpy.split(SA.query_ascii_values('LDS', container=numpy.array), 2)
+            AValues, BValues = np.split(SA.query_ascii_values('LDS', container=np.array), 2)
             YValues = BValues / AValues
         elif IM == 'a':
-            YValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YValues = SA.query_ascii_values('LDS', container=np.array)
         elif IM == 'b':
             SA.write('IM3AA0AB1')
             time.sleep(0.5)
-            YValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YValues = SA.query_ascii_values('LDS', container=np.array)
         elif IM == 'bothhalf':
             SA.write('IM2AB1')
             time.sleep(0.5)
-            YValues, YYValues = numpy.split(SA.query_ascii_values('LDS', container=numpy.array), 2)
+            YValues, YYValues = np.split(SA.query_ascii_values('LDS', container=np.array), 2)
         else:
-            YValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YValues = SA.query_ascii_values('LDS', container=np.array)
             time.sleep(0.5)
             SA.write('IM3AA0AB1')
             time.sleep(0.5)
-            YYValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YYValues = SA.query_ascii_values('LDS', container=np.array)
     else:
         SA.write('AA0PA1')
         if IM == 'bodefull':
-            AValues = SA.query_ascii_values('LDS', container=numpy.array)
+            AValues = SA.query_ascii_values('LDS', container=np.array)
             time.sleep(0.5)
             SA.write('IM3PA0PB1')
             time.sleep(0.5)
-            BValues = SA.query_ascii_values('LDS', container=numpy.array)
+            BValues = SA.query_ascii_values('LDS', container=np.array)
             YValues = BValues / AValues
         elif IM == 'bodehalf':
             SA.write('IM2PB1')
             time.sleep(0.5)
-            AValues, BValues = numpy.split(SA.query_ascii_values('LDS', container=numpy.array), 2)
+            AValues, BValues = np.split(SA.query_ascii_values('LDS', container=np.array), 2)
             YValues = BValues / AValues
         elif IM == 'a':
-            YValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YValues = SA.query_ascii_values('LDS', container=np.array)
         elif IM == 'b':
             SA.write('IM3PA0PB1')
             time.sleep(0.5)
-            YValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YValues = SA.query_ascii_values('LDS', container=np.array)
         elif IM == 'bothhalf':
             SA.write('IM2PB1')
             time.sleep(0.5)
-            YValues, YYValues = numpy.split(SA.query_ascii_values('LDS', container=numpy.array), 2)
+            YValues, YYValues = np.split(SA.query_ascii_values('LDS', container=np.array), 2)
         else:
-            YValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YValues = SA.query_ascii_values('LDS', container=np.array)
             time.sleep(0.5)
             SA.write('IM3PA0PB1')
             time.sleep(0.5)
-            YYValues = SA.query_ascii_values('LDS', container=numpy.array)
+            YYValues = SA.query_ascii_values('LDS', container=np.array)
     
     
     #Generate Frequency array
     if MD == 4:
-        FreqValues = numpy.linspace (SA.query_ascii_values('LAD')[0] - 0.5 * SA.query_ascii_values('LSP')[0], SA.query_ascii_values('LAD')[0] + 0.5 * SA.query_ascii_values('LSP')[0], num = YValues.size)
+        FreqValues = np.linspace (SA.query_ascii_values('LAD')[0] - 0.5 * SA.query_ascii_values('LSP')[0], SA.query_ascii_values('LAD')[0] + 0.5 * SA.query_ascii_values('LSP')[0], num = YValues.size)
     else:
-        FreqValues = numpy.linspace (SA.query_ascii_values('LAD')[0], SA.query_ascii_values('LSP')[0] + SA.query_ascii_values('LAD')[0], num = YValues.size)
+        FreqValues = np.linspace (SA.query_ascii_values('LAD')[0], SA.query_ascii_values('LSP')[0] + SA.query_ascii_values('LAD')[0], num = YValues.size)
         
     #Sets the line and point types
     line_point = ''
@@ -176,10 +174,27 @@ def make_plot (MD = 1, AD = 0, SP = 14, SENS = 2, IM = 'bodefull', PM = 'lin', P
     #return a list with the x/y arrays inside of it
     return return_values
     
+#Sets the sensitivity of the spectrum analyzer to the most sensitive it can be without overloading
+def set_sensitivity():
+    rm, SA = initialize() #initializes the resource manager and the spectrum analyzer
     
-
+    AS = 10 #Starting value for A sensitivity
+    BS = 10 #Starting value for B sensitivity
     
+    SA.write('AS' + str(AS) + 'BS' + str(BS) + 'IM2') #sets the sensitivities to the starting values
+    time.sleep(0.1)
+    status_word = SA.query_binary_values('LST1', datatype = 'uint8') #Reads the status word
     
-    
-    
+    #This loop sets the sensitivity to the most sensitive option
+    while status_word & 4 or status_word & 8: #Checks if A overload or B overload flags are raised
+        if status_word & 4: #Decreases A sens if A overload flag is raised
+            AS=AS-1
+        if status_word & 8: #Decreases B sens if B overload flag is raised
+            BS=BS-1
+        if AS<2 or BS<2:
+            raise ValueError("Sensitivity went out of bounds") #Prevents sending the SA an invalid command
+        SA.write('AS' + str(AS) + 'BS' + str(BS))
+        SA.write('LST0') #reset status word
+        time.sleep(0.25) #waits to make sure an overload is caught if it will occur
+        status_word = SA.query_binary_values('LST1', datatype = 'uint8') #reads the status word
 

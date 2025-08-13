@@ -93,17 +93,29 @@ def refresh_figure_toolbar ():
     figure_vars = list(zip(figure_vars, values))  #element tuple ((name, on/off, datatype,) data array)
     
     #generate the frequency array
+    freq_span_val = ''
+    for x in span_var.get():
+        if x.isdigit():
+            freq_span_val += x
+        elif x == 'k':
+            freq_span_val += '000'
+    freq_span_val = int(freq_span_val)
+    
     global freq_vals
-    if frequency_mode_var.get() == 3:
-        freq_vals = np.linspace (SA.query_ascii_values('LAD')[0] - 0.5 * SA.query_ascii_values('LSP')[0], SA.query_ascii_values('LAD')[0] + 0.5 * SA.query_ascii_values('LSP')[0], num = values[0].size)
-    else:
-        freq_vals = np.linspace (SA.query_ascii_values('LAD')[0], SA.query_ascii_values('LSP')[0] + SA.query_ascii_values('LAD')[0], num = values[0].size)
+    if frequency_mode_var.get() == 1:
+        freq_vals = np.linspace(0, 25000, num = values[0].size)
+    elif frequency_mode_var.get() == 2:
+        freq_vals = np.linspace(0, freq_span_val, num = values[0].size)
+    elif frequency_mode_var.get() == 3:
+        freq_vals = np.linspace (adjust_var.get() - 0.5 * freq_span_val, adjust_var.get() + 0.5 * freq_span_val, num = values[0].size)
+    elif frequency_mode_var.get() == 4:
+        freq_vals = np.linspace (adjust_var.get(), freq_span_val + adjust_var.get(), num = values[0].size)
     
     #Clear the figure generate axs to put data in, create axes
     fig.clf()
     
     if data_points_var.get():
-        line_type = '-o'
+        line_type = '-2'
     else:
         line_type = '-'
     
@@ -147,6 +159,10 @@ def refresh_all_display_widgets ():
 
 #Automatially sets the sensitivity to a value that it doesnt immediately overload
 def set_sensitivity ():
+    #Turn off average
+    avg_type_var.set(1)
+    SA.write('AV1')
+    
     #Initialize and define needed variables
     A_done = False
     B_done = False
@@ -208,6 +224,12 @@ def preset_values ():
     alphanumerics_var.set(SA.query('LAN'))
     ref_level_var.set(0)
     toggle_im_enable ()
+    trace_1.configure(relief=tk.RAISED)
+    trace_2.configure(relief=tk.RAISED)
+    free_run.configure(relief=tk.SUNKEN)
+    repetative.configure(relief=tk.SUNKEN)
+    number_shift.configure(relief=tk.RAISED)
+    
     
 #Toggles the display of data points, also used to refresh the display without changing data
 def toggle_data_points ():
@@ -215,7 +237,7 @@ def toggle_data_points ():
     fig.clf()
     
     if data_points_var.get():
-        line_type = '-o'
+        line_type = '-2'
     else:
         line_type = '-'
     
@@ -300,7 +322,7 @@ content = tk.Frame(root)
 trace_1 = tk.IntVar(value=0)
 trace_2 = tk.IntVar(value=0)
 passband_var = tk.IntVar(value=1)
-sens_list = ['CAL', '30 V, + 30 dBV', '10 V, +20 dBV', '0 V, +10 dBV', '1 V, +0 dBV', '.3 V, -10 dBV', '.1 V, -20 dBV', '30 mV, -30 dBV', '10 mV, -40 dBV', '3 mV,-50 dBV']
+sens_list = ['CAL', '30 V, + 30 dBV', '10 V, +20 dBV', '3 V, +10 dBV', '1 V, +0 dBV', '.3 V, -10 dBV', '.1 V, -20 dBV', '30 mV, -30 dBV', '10 mV, -40 dBV', '3 mV,-50 dBV']
 A_sens_var = tk.StringVar(value=sens_list[1])
 B_sens_var = tk.StringVar(value=sens_list[1])
 transfer_sens_var = tk.StringVar(value = SA.query('LXS'))
@@ -470,12 +492,12 @@ frequency = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the needed widgets
 frequency_mode_label = tk.Label(frequency, text="Frequency Mode")
-frequency_mode_1 = tk.Radiobutton(frequency, text="0-25kHz", variable=frequency_mode_var, value=1, command=lambda: [write_data('MD' + str(frequency_mode_var.get()))])
-frequency_mode_2 = tk.Radiobutton(frequency, text="0-Span", variable=frequency_mode_var, value=2, command=lambda: [write_data('MD' + str(frequency_mode_var.get()))])
-frequency_mode_3 = tk.Radiobutton(frequency, text="Adjust Start, Span", variable=frequency_mode_var, value=4, command=lambda: [write_data('MD' + str(frequency_mode_var.get()))])
-frequency_mode_4 = tk.Radiobutton(frequency, text="Ajust Center, Span", variable=frequency_mode_var, value=3, command=lambda: [write_data('MD' + str(frequency_mode_var.get()))])
+frequency_mode_1 = tk.Radiobutton(frequency, text="0-25kHz", variable=frequency_mode_var, value=1, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
+frequency_mode_2 = tk.Radiobutton(frequency, text="0-Span", variable=frequency_mode_var, value=2, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
+frequency_mode_3 = tk.Radiobutton(frequency, text="Adjust Start, Span", variable=frequency_mode_var, value=4, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
+frequency_mode_4 = tk.Radiobutton(frequency, text="Ajust Center, Span", variable=frequency_mode_var, value=3, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
 span_label = tk.Label(frequency, text="Freqency Span")
-span_menu = tk.OptionMenu(frequency, span_var, *span_list, command=lambda x: [write_data('SP' + str(span_list.index(span_var.get())+1))])
+span_menu = tk.OptionMenu(frequency, span_var, *span_list, command=lambda x: [write_data('SP' + str(span_list.index(span_var.get())+1)), write_data('RE')])
 adjust_slider = tk.Scale(frequency, label="Frequncy Adjust (Hz)", variable=adjust_var, from_=0, to=24999, orient=tk.HORIZONTAL, command=lambda x: [write_data('AD' + str(adjust_var.get()))])
 ref_level_slider = tk.Scale(frequency, label="Amplitude Reference Level (dB)", variable=ref_level_var, from_=0, to=-80, orient=tk.HORIZONTAL, resolution=10, command=lambda x: [set_ref_level()])
 
