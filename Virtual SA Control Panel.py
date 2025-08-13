@@ -2,7 +2,11 @@
 """
 Created on Thu Aug  7 15:44:19 2025
 
-@author: jackc
+Generates a virtual control panal for old HP Spectrum Analyzers pre 1990 using tkinter to
+make the GUI, pyvisa to communicate with the SA, matplotlib to generate plots, and numpy to 
+create and export data arrays
+
+@author: Jack Cochrane
 """
 
 import tkinter as tk
