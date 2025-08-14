@@ -50,7 +50,10 @@ def write_data (command):
 
 #refreshes alphanumerics, called by refresh_all_display_widgets
 def refresh_alphanumerics ():
-    alphanumerics_var.set(SA.query('LAN'))
+    val = SA.query('LAN')
+    val = val.replace('*', '°')
+    val = val[0:32] + '\n' + val[32:64] + '\n' + val[64:96] + '\n' + val[96:128]
+    alphanumerics_var.set(val)
 
 #refreshes both overloads, called by refresh_all_display widgets
 def refresh_overload ():
@@ -117,46 +120,9 @@ def refresh_figure_toolbar ():
         freq_vals = np.linspace (adjust_var.get() - 0.5 * freq_span_val, adjust_var.get() + 0.5 * freq_span_val, num = values[0].size)
     elif frequency_mode_var.get() == 4:
         freq_vals = np.linspace (adjust_var.get(), freq_span_val + adjust_var.get(), num = values[0].size)
-    
-    #Clear the figure generate axs to put data in, create axes
-    fig.clf()
-    
-    if data_points_var.get():
-        line_type = '-2'
-    else:
-        line_type = '-'
-    
     figure_vars = list(enumerate(figure_vars)) #element tuple (index, ((name, on/off, datatype,) data array))
-    if two_vars:
-        axs = fig.subplots(2, sharex=True)
-        for i, x in figure_vars:
-            axs[i].set_title(x[0][0])
-            if x_scale_var.get()==1:
-                axs[i].semilogx(freq_vals, x[1], line_type)
-                axs[i].set_xlabel('Frequency (Hz)')
-                axs[i].set_ylabel(x[0][2])
-            else:
-                axs[i].plot(freq_vals, x[1], line_type)
-                axs[i].set_xlabel('Frequency (Hz)')
-                axs[i].set_ylabel(x[0][2])
-            axs[i].grid()
-            
-    else:
-        ax=fig.subplots()
-        for i, x in figure_vars:
-            ax.set_title(x[0][0])
-            if x_scale_var.get()==1:
-                ax.semilogx(freq_vals, x[1], line_type)
-            else:
-                ax.plot(freq_vals, x[1], line_type)
-            ax.set_xlabel('Frequency (Hz)')
-            ax.set_ylabel(x[0][2])
-            ax.grid()
     
-    passband_list = ['error', 'Flattop', 'Hanning', 'Uniform']
-    fig.suptitle(t=('Passband Shape: '+ passband_list[passband_var.get()]), size='medium', ha='left', va='bottom', x=0.02, y=0.02)
-    
-    data_display.draw() #Draws the updated plots on the tkinter canvas object
+    redraw_display ()
         
 #Generates plot, alphanumerics, and overload on startup and on pressing refresh
 def refresh_all_display_widgets ():
@@ -229,16 +195,16 @@ def preset_values ():
     free_run_var.set(1)
     repetative_var.set(1)
     alphanumerics_var.set(SA.query('LAN'))
-    ref_level_var.set(0)
+    ref_level_var.set(1)
     toggle_im_enable ()
-    trace_1.configure(relief=tk.RAISED)
-    trace_2.configure(relief=tk.RAISED)
+    recall_trace_1.configure(relief=tk.RAISED)
+    recall_trace_2.configure(relief=tk.RAISED)
     free_run.configure(relief=tk.SUNKEN)
     repetative.configure(relief=tk.SUNKEN)
     number_shift.configure(relief=tk.RAISED)
     
 #Toggles the display of data points, also used to refresh the display without changing data
-def toggle_data_points ():
+def redraw_display (*args):
     #Clear the figure generate axs to put data in, create axes
     fig.clf()
     
@@ -246,18 +212,22 @@ def toggle_data_points ():
         line_type = '-2'
     else:
         line_type = '-'
-    
+    global ax
     if two_vars:
-        axs = fig.subplots(2, sharex=True)
+        ax = fig.subplots(2, sharex=True)
         for i, x in figure_vars:
-            axs[i].set_title(x[0][0])
+            ax[i].set_title(x[0][0])
             if x_scale_var.get()==1:
-                axs[i].semilogx(freq_vals, x[1], line_type)
+                ax[i].semilogx(freq_vals, x[1], line_type)
             else:
-                axs[i].plot(freq_vals, x[1], line_type)
-            axs[i].set_xlabel('Frequency (Hz)')
-            axs[i].set_ylabel(x[0][2])
-            axs[i].grid()
+                ax[i].plot(freq_vals, x[1], line_type)
+            ax[i].set_xlabel('Frequency (Hz)')
+            ax[i].set_ylabel(x[0][2])
+            ax[i].grid(which='both')
+            ax[i].axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
+            ax[i].axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1)
+            if display_toggle_on.get():
+                ax[i].legend()
             
     else:
         ax=fig.subplots()
@@ -269,17 +239,15 @@ def toggle_data_points ():
                 ax.plot(freq_vals, x[1], line_type)
             ax.set_xlabel('Frequency (Hz)')
             ax.set_ylabel(x[0][2])
-            ax.grid()
+            ax.grid(which='both')
+            ax.axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
+            ax.axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1)
+            if display_toggle_on.get():
+                ax.legend()
     
     passband_list = ['error', 'Flattop', 'Hanning', 'Uniform']
     fig.suptitle(t=('Passband Shape: '+ passband_list[passband_var.get()]), size='medium', ha='left', va='bottom', x=0.02, y=0.02)
-    data_display.draw() #Draws the updated plots on the tkinter canvas object
-    
-#Sets the amplitude reference level
-def set_ref_level ():
-    ref_level_val = ref_level_var.get()
-    ref_level_val = (ref_level_val / -10) + 1
-    SA.write('AM' + str(ref_level_val))
+    data_display.draw()
 
 #Exports/saves data
 def export_data ():
@@ -290,11 +258,11 @@ def export_data ():
         export_name = 'SA_data/' + file_name_var.get() + '.csv'
 
     if two_vars:
-        export_array = np.rot90(np.array([figure_vars[0][1][1], figure_vars[1][1][1], freq_vals]))
-        export_header = figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2] + ',' + figure_vars[1][1][0][0][0] + ' ' + figure_vars[1][1][0][2] + ',' + ' Frequency (Hz)'
+        export_array = np.rot90(freq_vals, np.array([figure_vars[0][1][1], figure_vars[1][1][1]]))
+        export_header = ' Frequency (Hz)' + ',' + figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2] + ',' + figure_vars[1][1][0][0][0] + ' ' + figure_vars[1][1][0][2]
     else:
-        export_array = np.rot90(np.array([figure_vars[0][1][1], freq_vals]))
-        export_header = figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2] + ',' + 'Frequency (Hz)'
+        export_array = np.rot90(np.array([freq_vals, figure_vars[0][1][1]]))
+        export_header = 'Frequency (Hz)' + ',' + figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2]
     
     np.savetxt(export_name, export_array, header=export_header, delimiter=',', comments='')
 
@@ -306,6 +274,18 @@ def toggle_button (button, button_var):
     else:
         button.configure(relief=tk.SUNKEN)
         button_var.set(1)
+
+#Toggles the cursor slider on and off
+def dis_slider_toggle ():
+    if display_toggle_on.get() == 1:
+        display_toggle.configure(relief=tk.RAISED)
+        display_toggle_on.set(0)
+        display_toggle_var.set('Off')
+    else:
+        display_toggle.configure(relief=tk.SUNKEN)
+        display_toggle_on.set(1)
+        display_toggle_var.set('On')
+    redraw_display()
 
 
 #Create data storage folders if they do not exist already
@@ -362,9 +342,13 @@ free_run_var = tk.IntVar(value=1)
 repetative_var = tk.IntVar(value=1)
 alphanumerics_var = tk.StringVar(value = SA.query('LAN'))
 data_points_var = tk.BooleanVar(value=False)
-ref_level_var = tk.IntVar(value=0)
+ref_level_var = tk.IntVar(value=1)
 file_name_var = tk.StringVar(value='')
-file_counter = 0
+font_small = ("Arial", 12)
+font_big = ("Arial", 18)
+display_slider_var = tk.IntVar(value=0)
+display_toggle_on = tk.BooleanVar(value=False)
+display_toggle_var = tk.StringVar(value='Off')
 
 #Make a frame to put the display into
 display = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
@@ -377,19 +361,27 @@ data_display = FigureCanvasTkAgg(fig, master=display)  #Initializes the figure a
 tool_bar = NavigationToolbar2Tk(data_display, display, pack_toolbar=False)
 tool_bar.update()
 
-#pack display
-tool_bar.pack(side=tk.BOTTOM, fill=tk.X)
-data_display.get_tk_widget().pack(side=tk.TOP, fill=tk.BOTH, expand=True)
+#create the other widgets
+display_slider_label = tk.Label(display, text='Cursor', font=font_small)
+display_slider = tk.Scale(display, from_=0, to=127, variable=display_slider_var, orient=tk.HORIZONTAL, resolution=1, showvalue=0, command=redraw_display)
+display_toggle = tk.Button(display, relief=tk.RAISED, font=font_small, textvariable=display_toggle_var, command=dis_slider_toggle)
 
+#grid display
+tool_bar.grid(row=13, column=0, rowspan=2, columnspan=15, sticky='nwes')
+data_display.get_tk_widget().grid(row=0, column=0, columnspan=15, rowspan=12, sticky='nwes')
+display_slider_label.grid(row=12, column=0, sticky='nwes')
+display_slider.grid(row=12, column=1, columnspan=13, sticky='we')
+display_toggle.grid(row=12, column=14, sticky='nwes')
+row_col_config(display, rows=[1]*12, columns=[1]*15)
 
 #Make a frame to put the trace buttons in
 trace = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the buttons to put into trace
-store_trace_1 = tk.Button(trace, text="Store Trace 1", command=lambda: [write_data('TS')])
-store_trace_2 = tk.Button(trace, text="Store Trace 2", command=lambda: [write_data('RS')])
-recall_trace_1 = tk.Button(trace, text="Recall Trace 1", relief=tk.RAISED, command=lambda: [toggle_button(recall_trace_1, trace_1), write_data('TR'+str(trace_1.get()))])
-recall_trace_2 = tk.Button(trace, text="Recall Trace 2", relief=tk.RAISED, command=lambda: [toggle_button(recall_trace_2, trace_2), write_data('RR'+str(trace_2.get()))])
+store_trace_1 = tk.Button(trace, text="Store Trace 1", font=font_small, command=lambda: [write_data('TS')])
+store_trace_2 = tk.Button(trace, text="Store Trace 2", font=font_small, command=lambda: [write_data('RS')])
+recall_trace_1 = tk.Button(trace, text="Recall Trace 1", font=font_small, relief=tk.RAISED, command=lambda: [toggle_button(recall_trace_1, trace_1), write_data('TR'+str(trace_1.get()))])
+recall_trace_2 = tk.Button(trace, text="Recall Trace 2", font=font_small, relief=tk.RAISED, command=lambda: [toggle_button(recall_trace_2, trace_2), write_data('RR'+str(trace_2.get()))])
 
 #grid trace, configure rows/columns
 store_trace_1.grid(row=0, column=0, sticky='nwes')
@@ -399,14 +391,14 @@ recall_trace_2.grid(row=1, column=1, sticky='nwes')
 row_col_config(trace, rows=[1, 1], columns=[1, 1])
 
 
-#Make a frame to put pasband radiobuttons in, define the intVar for passband
+#Make a frame to put passband radiobuttons in, define the intVar for passband
 passband = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the lable and buttons to put in the frame
-passband_label = tk.Label(passband, text="Passband Shape")
-flattop = tk.Radiobutton(passband, text="Flattop", variable=passband_var, value=1, command=lambda: [write_data('PS'+str(passband_var.get())), toggle_data_points ()])
-hanning = tk.Radiobutton(passband, text="Hanning", variable=passband_var, value=2, command=lambda: [write_data('PS'+str(passband_var.get())), toggle_data_points ()])
-uniform = tk.Radiobutton(passband, text="Uniform", variable=passband_var, value=3, command=lambda: [write_data('PS'+str(passband_var.get())), toggle_data_points ()])
+passband_label = tk.Label(passband, text="Passband Shape", font=font_small)
+flattop = tk.Radiobutton(passband, text="Flattop", variable=passband_var, value=1, font=font_small, command=lambda: [write_data('PS'+str(passband_var.get())), refresh_all_display_widgets()])
+hanning = tk.Radiobutton(passband, text="Hanning", variable=passband_var, value=2, font=font_small, command=lambda: [write_data('PS'+str(passband_var.get())), refresh_all_display_widgets()])
+uniform = tk.Radiobutton(passband, text="Uniform", variable=passband_var, value=3, font=font_small, command=lambda: [write_data('PS'+str(passband_var.get())), refresh_all_display_widgets()])
 
 #grid passband, configure rows/col
 passband_label.grid(row=0, column=0, sticky='nwes')
@@ -422,15 +414,15 @@ sensitivity = tk.Frame(content, highlightbackground="grey", highlightthickness=2
 #Make the OptionMenus, Overload Indecators, Transfer Sensitivity, AutoSense Button, and labels
 A_sens = tk.OptionMenu(sensitivity, A_sens_var, *sens_list, command=lambda x: [write_data(('AS' + str(sens_list.index(A_sens_var.get())+1))), refresh_overload()])
 B_sens = tk.OptionMenu(sensitivity, B_sens_var, *sens_list, command=lambda x: [write_data(('BS' + str(sens_list.index(B_sens_var.get())+1))), refresh_overload()])
-transfer_sens = tk.Label(sensitivity, textvariable = transfer_sens_var, highlightbackground="grey", highlightthickness=1)
-auto_sens = tk.Button(sensitivity, text="Auto Sensitivity", command=set_sensitivity)
-A_sens_label = tk.Label(sensitivity, text="A Sensitivity", highlightbackground="grey", highlightthickness=1)
-B_sens_label = tk.Label(sensitivity, text="B Sensitivity", highlightbackground="grey", highlightthickness=1)
-transfer_sens_label = tk.Label(sensitivity, text="Transfer Sensitivity", highlightbackground="grey", highlightthickness=1)
-A_overload_label = tk.Label(sensitivity, text="A Overload", highlightbackground="grey", highlightthickness=1)
-B_overload_label = tk.Label(sensitivity, text="B Overload", highlightbackground="grey", highlightthickness=1)
-A_overload = tk.Label(sensitivity, textvariable=A_overload_var, highlightbackground="grey", highlightthickness=1)
-B_overload = tk.Label(sensitivity, textvariable=B_overload_var, highlightbackground="grey", highlightthickness=1)
+transfer_sens = tk.Label(sensitivity, textvariable = transfer_sens_var, font=font_small, highlightbackground="grey", highlightthickness=1)
+auto_sens = tk.Button(sensitivity, text="Auto Sensitivity", font=font_small, command=set_sensitivity)
+A_sens_label = tk.Label(sensitivity, text="A Sensitivity", font=font_small, highlightbackground="grey", highlightthickness=1)
+B_sens_label = tk.Label(sensitivity, text="B Sensitivity", font=font_small, highlightbackground="grey", highlightthickness=1)
+transfer_sens_label = tk.Label(sensitivity, text="Transfer Sensitivity", font=font_small, highlightbackground="grey", highlightthickness=1)
+A_overload_label = tk.Label(sensitivity, text="A Overload", font=font_small, highlightbackground="grey", highlightthickness=1)
+B_overload_label = tk.Label(sensitivity, text="B Overload", font=font_small, highlightbackground="grey", highlightthickness=1)
+A_overload = tk.Label(sensitivity, textvariable=A_overload_var, font=font_small, highlightbackground="grey", highlightthickness=1)
+B_overload = tk.Label(sensitivity, textvariable=B_overload_var, font=font_small, highlightbackground="grey", highlightthickness=1)
 
 #grid sensitivity, congigure rows/comlumns
 A_sens_label.grid(row=0, column=0, sticky='nwes')
@@ -451,16 +443,16 @@ row_col_config(sensitivity, rows=[1,1], columns=[4,2,4,2,4,2])
 input_mode = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the needed widgets, add checkboxes to a list to allow for ease of use in enable function
-im_label = tk.Label(input_mode, text="Input Mode")
-im_amp_label = tk.Label(input_mode, text="Amplitude:")
-im_phase_label = tk.Label(input_mode, text="Phase:")
-A_amplitude = tk.Checkbutton(input_mode, text="A", variable=input_mode_vars[0], command=lambda: [toggle_im_enable(), write_data('AA'+str(input_mode_vars[0].get()))])
-A_phase = tk.Checkbutton(input_mode, text="A", variable=input_mode_vars[1], command=lambda: [toggle_im_enable(), write_data('PA'+str(input_mode_vars[1].get()))])
-B_amplitude = tk.Checkbutton(input_mode, text="B", variable=input_mode_vars[2], command=lambda: [toggle_im_enable(), write_data('AB'+str(input_mode_vars[2].get()))])
-B_phase = tk.Checkbutton(input_mode, text="B", variable=input_mode_vars[3], command=lambda: [toggle_im_enable(), write_data('PB'+str(input_mode_vars[3].get()))])
-transfer_amplitude = tk.Checkbutton(input_mode, text="Transfer", variable=input_mode_vars[4], command=lambda: [toggle_im_enable(), write_data('AX'+str(input_mode_vars[4].get()))])
-transfer_phase = tk.Checkbutton(input_mode, text="Transfer", variable=input_mode_vars[5], command=lambda: [toggle_im_enable(), write_data('PX'+str(input_mode_vars[5].get()))])
-coherance = tk.Checkbutton(input_mode, text="Coherance", variable=input_mode_vars[6], command=lambda: [toggle_im_enable(), write_data('CH'+str(input_mode_vars[6].get()))])
+im_label = tk.Label(input_mode, text="Input Mode", font=font_small)
+im_amp_label = tk.Label(input_mode, text="Amplitude:", font=font_small)
+im_phase_label = tk.Label(input_mode, text="Phase:", font=font_small)
+A_amplitude = tk.Checkbutton(input_mode, text="A", font=font_small, variable=input_mode_vars[0], command=lambda: [toggle_im_enable(), write_data('AA'+str(input_mode_vars[0].get()))])
+A_phase = tk.Checkbutton(input_mode, text="A", font=font_small, variable=input_mode_vars[1], command=lambda: [toggle_im_enable(), write_data('PA'+str(input_mode_vars[1].get()))])
+B_amplitude = tk.Checkbutton(input_mode, text="B", font=font_small, variable=input_mode_vars[2], command=lambda: [toggle_im_enable(), write_data('AB'+str(input_mode_vars[2].get()))])
+B_phase = tk.Checkbutton(input_mode, text="B", font=font_small, variable=input_mode_vars[3], command=lambda: [toggle_im_enable(), write_data('PB'+str(input_mode_vars[3].get()))])
+transfer_amplitude = tk.Checkbutton(input_mode, text="Transfer", font=font_small, variable=input_mode_vars[4], command=lambda: [toggle_im_enable(), write_data('AX'+str(input_mode_vars[4].get()))])
+transfer_phase = tk.Checkbutton(input_mode, text="Transfer", font=font_small, variable=input_mode_vars[5], command=lambda: [toggle_im_enable(), write_data('PX'+str(input_mode_vars[5].get()))])
+coherance = tk.Checkbutton(input_mode, text="Coherance", font=font_small, variable=input_mode_vars[6], command=lambda: [toggle_im_enable(), write_data('CH'+str(input_mode_vars[6].get()))])
 im_cb = [A_amplitude, A_phase, B_amplitude, B_phase, transfer_amplitude, transfer_phase, coherance]
 
 #Grid input mode, configure rows/colums 
@@ -481,14 +473,14 @@ row_col_config(input_mode, rows=[1,1,1], columns=[1,1,1,1])
 scale = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the needed widgets
-x_scale_label = tk.Label(scale, text = "X Scale")
-y_scale_label = tk.Label(scale, text = "Y Scale")
-y_scale_lin = tk.Radiobutton(scale, text= "Linear", variable=y_scale_var, value=1, command=lambda: [write_data('SC' + str(y_scale_var.get()))])
-y_scale_10dB = tk.Radiobutton(scale, text="10dB/DIV", variable=y_scale_var, value=2, command=lambda: [write_data('SC' + str(y_scale_var.get()))])
-y_scale_20dB = tk.Radiobutton(scale, text="20dB/DIV", variable=y_scale_var, value=3, command=lambda: [write_data('SC' + str(y_scale_var.get()))])
-x_scale_lin = tk.Radiobutton(scale, text="Linear", variable=x_scale_var, value=0, command=toggle_data_points)
-x_scale_log = tk.Radiobutton(scale, text="Log", variable=x_scale_var, value=1, command=toggle_data_points)
-data_points = tk.Button(scale, text ="Show Datapoints", relief=tk.RAISED, command=lambda: [toggle_button(data_points, data_points_var), toggle_data_points()])
+x_scale_label = tk.Label(scale, text = "X Scale", font=font_small)
+y_scale_label = tk.Label(scale, text = "Y Scale", font=font_small)
+y_scale_lin = tk.Radiobutton(scale, text= "Linear", variable=y_scale_var, value=1, font=font_small, command=lambda: [write_data('SC' + str(y_scale_var.get()))])
+y_scale_10dB = tk.Radiobutton(scale, text="10dB/DIV", variable=y_scale_var, value=2, font=font_small, command=lambda: [write_data('SC' + str(y_scale_var.get()))])
+y_scale_20dB = tk.Radiobutton(scale, text="20dB/DIV", variable=y_scale_var, value=3, font=font_small, command=lambda: [write_data('SC' + str(y_scale_var.get()))])
+x_scale_lin = tk.Radiobutton(scale, text="Linear", variable=x_scale_var, value=0, font=font_small, command=redraw_display)
+x_scale_log = tk.Radiobutton(scale, text="Log", variable=x_scale_var, value=1, font=font_small, command=redraw_display)
+data_points = tk.Button(scale, text ="Show Datapoints", relief=tk.RAISED, font=font_small, command=lambda: [toggle_button(data_points, data_points_var), redraw_display()])
 
 
 #Grid scale, configure rows/cols
@@ -507,15 +499,15 @@ row_col_config(scale, rows=[1,1,1], columns=[1,1])
 frequency = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the needed widgets
-frequency_mode_label = tk.Label(frequency, text="Frequency Mode")
-frequency_mode_1 = tk.Radiobutton(frequency, text="0-25kHz", variable=frequency_mode_var, value=1, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
-frequency_mode_2 = tk.Radiobutton(frequency, text="0-Span", variable=frequency_mode_var, value=2, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
-frequency_mode_3 = tk.Radiobutton(frequency, text="Adjust Start, Span", variable=frequency_mode_var, value=4, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
-frequency_mode_4 = tk.Radiobutton(frequency, text="Ajust Center, Span", variable=frequency_mode_var, value=3, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
-span_label = tk.Label(frequency, text="Freqency Span")
+frequency_mode_label = tk.Label(frequency, text="Frequency Mode", font=font_small)
+frequency_mode_1 = tk.Radiobutton(frequency, text="0-25kHz", font=font_small, variable=frequency_mode_var, value=1, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
+frequency_mode_2 = tk.Radiobutton(frequency, text="0-Span", font=font_small, variable=frequency_mode_var, value=2, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
+frequency_mode_3 = tk.Radiobutton(frequency, text="Adjust Start, Span", font=font_small, variable=frequency_mode_var, value=4, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
+frequency_mode_4 = tk.Radiobutton(frequency, text="Ajust Center, Span", font=font_small, variable=frequency_mode_var, value=3, command=lambda: [write_data('MD' + str(frequency_mode_var.get())), write_data('RE')])
+span_label = tk.Label(frequency, text="Freqency Span", font=font_small)
 span_menu = tk.OptionMenu(frequency, span_var, *span_list, command=lambda x: [write_data('SP' + str(span_list.index(span_var.get())+1)), write_data('RE')])
-adjust_slider = tk.Scale(frequency, label="Frequncy Adjust (Hz)", variable=adjust_var, from_=0, to=24999, orient=tk.HORIZONTAL, command=lambda x: [write_data('AD' + str(adjust_var.get()))])
-ref_level_slider = tk.Scale(frequency, label="Amplitude Reference Level (dB)", variable=ref_level_var, from_=0, to=-80, orient=tk.HORIZONTAL, resolution=10, command=lambda x: [set_ref_level()])
+adjust_slider = tk.Scale(frequency, label="Frequncy Adjust (Hz)", font=font_small, variable=adjust_var, from_=0, to=24999, orient=tk.HORIZONTAL, command=lambda x: [write_data('AD' + str(adjust_var.get()))])
+ref_level_slider = tk.Scale(frequency, label="Amplitude Reference Level", font=font_small, variable=ref_level_var, from_=1, to=9, orient=tk.HORIZONTAL, resolution=1, showvalue=0, repeatdelay=1000, command=lambda x: [write_data('AM' + str(ref_level_var.get())), refresh_figure_toolbar(), refresh_alphanumerics()])
 
 #Grid frequency and configure rows/columns
 frequency_mode_label.grid(row=0, column=1, columnspan=2, sticky='nwes')
@@ -534,12 +526,12 @@ row_col_config(frequency, rows=[1,1,1,4,4], columns=[1,1,1])
 coupling = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the needed widgets
-A_coupling_label = tk.Label(coupling, text="A Coupling")
-B_coupling_label = tk.Label(coupling, text="B Coupling")
-A_ac = tk.Radiobutton(coupling, text="AC", variable=A_coupling_var, value=1, command=lambda: [write_data('AC' + str(A_coupling_var.get()))])
-A_dc = tk.Radiobutton(coupling, text="DC", variable=A_coupling_var, value=2, command=lambda: [write_data('AC' + str(A_coupling_var.get()))])
-B_ac = tk.Radiobutton(coupling, text="AC", variable=B_coupling_var, value=1, command=lambda: [write_data('BC' + str(B_coupling_var.get()))])
-B_dc = tk.Radiobutton(coupling, text="DC", variable=B_coupling_var, value=2, command=lambda: [write_data('BC' + str(B_coupling_var.get()))])
+A_coupling_label = tk.Label(coupling, text="A Coupling", font=font_small)
+B_coupling_label = tk.Label(coupling, text="B Coupling", font=font_small)
+A_ac = tk.Radiobutton(coupling, text="AC", variable=A_coupling_var, value=1, font=font_small, command=lambda: [write_data('AC' + str(A_coupling_var.get()))])
+A_dc = tk.Radiobutton(coupling, text="DC", variable=A_coupling_var, value=2, font=font_small, command=lambda: [write_data('AC' + str(A_coupling_var.get()))])
+B_ac = tk.Radiobutton(coupling, text="AC", variable=B_coupling_var, value=1, font=font_small, command=lambda: [write_data('BC' + str(B_coupling_var.get()))])
+B_dc = tk.Radiobutton(coupling, text="DC", variable=B_coupling_var, value=2, font=font_small, command=lambda: [write_data('BC' + str(B_coupling_var.get()))])
 
 #Grid coupling, config rows/columns
 A_coupling_label.grid(row=0, column=0, sticky='nwes')
@@ -555,18 +547,18 @@ row_col_config(coupling, rows=[1,1,1], columns=[1,1])
 average = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make the needed widgets
-avg_type_label = tk.Label(average, text="Average Type")
-sample_num_label = tk.Label(average, text="Sample Number")
-avg_type_1 = tk.Radiobutton(average, text="Off", variable=avg_type_var, value=1, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
-avg_type_2 = tk.Radiobutton(average, text="RMS", variable=avg_type_var, value=2, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
-avg_type_3 = tk.Radiobutton(average, text="Time", variable=avg_type_var, value=3, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
-avg_type_4 = tk.Radiobutton(average, text="Peak", variable=avg_type_var, value=4, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
-sample_num_1 = tk.Radiobutton(average, text="4/64", variable=sample_num_var, value=1, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
-sample_num_2 = tk.Radiobutton(average, text="8/128", variable=sample_num_var, value=2, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
-sample_num_3 = tk.Radiobutton(average, text="16/256", variable=sample_num_var, value=3, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
-sample_num_4 = tk.Radiobutton(average, text="32/Exp", variable=sample_num_var, value=4, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
-restart_average = tk.Button(average, text="Restart", command=lambda: [write_data('RE')])
-number_shift = tk.Button(average, text="Shift", command=lambda: [toggle_button(number_shift, shift_var), write_data('SH' + str(shift_var.get()))])
+avg_type_label = tk.Label(average, text="Average Type", font=font_small)
+sample_num_label = tk.Label(average, text="Sample Number", font=font_small)
+avg_type_1 = tk.Radiobutton(average, text="Off", variable=avg_type_var, value=1, font=font_small, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
+avg_type_2 = tk.Radiobutton(average, text="RMS", variable=avg_type_var, value=2, font=font_small, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
+avg_type_3 = tk.Radiobutton(average, text="Time", variable=avg_type_var, value=3, font=font_small, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
+avg_type_4 = tk.Radiobutton(average, text="Peak", variable=avg_type_var, value=4, font=font_small, command=lambda: [write_data('AV' + str(avg_type_var.get()))])
+sample_num_1 = tk.Radiobutton(average, text="4/64", variable=sample_num_var, value=1, font=font_small, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
+sample_num_2 = tk.Radiobutton(average, text="8/128", variable=sample_num_var, value=2, font=font_small, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
+sample_num_3 = tk.Radiobutton(average, text="16/256", variable=sample_num_var, value=3, font=font_small, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
+sample_num_4 = tk.Radiobutton(average, text="32/Exp", variable=sample_num_var, value=4, font=font_small, command=lambda: [write_data('NU' + str(sample_num_var.get()))])
+restart_average = tk.Button(average, text="Restart", font=font_small, command=lambda: [write_data('RE')])
+number_shift = tk.Button(average, text="Shift", font=font_small, command=lambda: [toggle_button(number_shift, shift_var), write_data('SH' + str(shift_var.get()))])
 
 #Grid average, config rows/columns
 avg_type_label.grid(row=0, column=0, sticky='nwes')
@@ -588,11 +580,11 @@ row_col_config(average, rows=[1,1,1,1,1], columns=[2,2,1])
 export = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
 
 #Make needed widgets
-export_label = tk.Label(export, text="Export Data")
-file_name_label = tk.Label(export, text="File Name:")
-file_name = tk.Entry(export, textvariable=file_name_var)
-save_button = tk.Button(export, text="Save", command=lambda :[export_data()])
-clear_button = tk.Button(export, text='Clear', command=lambda :[file_name_var.set('')])
+export_label = tk.Label(export, text="Export Data", font=font_small)
+file_name_label = tk.Label(export, text="File Name:", font=font_small)
+file_name = tk.Entry(export, textvariable=file_name_var, font=font_small)
+save_button = tk.Button(export, text="Save", font=font_small, command=lambda :[export_data()])
+clear_button = tk.Button(export, text='Clear', font=font_small, command=lambda :[file_name_var.set('')])
 
 #Grid export, config rows/columns
 export_label.grid(row=0, column=0, columnspan=2, sticky='nwes')
@@ -604,12 +596,12 @@ row_col_config(export, rows=[1,1,1,2], columns=[1,1])
 
 
 #Make misc widgets that arent in a frame
-refresh_display = tk.Button(content, text="Refresh\nDisplay", command=lambda: [refresh_all_display_widgets()])
-preset = tk.Button(content, text="Preset", command=lambda: [write_data('PRSIM2'), preset_values()])
-alphanumerics = tk.Label(content, textvariable=alphanumerics_var, highlightbackground="grey", highlightthickness=2)
-free_run = tk.Button(content, relief=tk.SUNKEN, text="Free Run", command=lambda: [toggle_button(free_run, free_run_var), write_data('FR' + str(free_run_var.get()))])
-repetative = tk.Button(content, relief=tk.SUNKEN, text="Repetative", command=lambda: [toggle_button(repetative, repetative_var), write_data('RP' + str(repetative_var.get()))])
-arm = tk.Button(content, text="Arm", command=lambda: [write_data('AR')])
+refresh_display = tk.Button(content, text="Refresh\nDisplay", font=font_small, command=lambda: [refresh_all_display_widgets()])
+preset = tk.Button(content, text="Preset", font=font_small, command=lambda: [write_data('PRSIM2'), preset_values()])
+alphanumerics = tk.Label(content, textvariable=alphanumerics_var, font=font_big, highlightbackground="grey", highlightthickness=2)
+free_run = tk.Button(content, relief=tk.SUNKEN, text="Free Run", font=font_small, command=lambda: [toggle_button(free_run, free_run_var), write_data('FR' + str(free_run_var.get()))])
+repetative = tk.Button(content, relief=tk.SUNKEN, text="Repetative", font=font_small, command=lambda: [toggle_button(repetative, repetative_var), write_data('RP' + str(repetative_var.get()))])
+arm = tk.Button(content, text="Arm", font=font_small, command=lambda: [write_data('AR')])
 
 #Update all display widgets before going to main
 refresh_all_display_widgets()
@@ -631,7 +623,7 @@ arm.grid(row=8, column=30, rowspan=2, columnspan=2, sticky='nwes')
 coupling.grid(row=10, column=26, rowspan=3, columnspan=6, sticky='nwes')
 average.grid(row=13, column=15, rowspan=5, columnspan=12, sticky='nwes')
 export.grid(row=13, column=27, rowspan=5, columnspan=5, sticky='nwes')
-row_col_config(content, rows=[1]*18, columns=[1]*32)
+row_col_config(content, rows=[1]*14, columns=[1]*15)
 
 #Grid content into root, configure
 content.grid(row=0, column=0, sticky='nwes')
