@@ -258,7 +258,7 @@ def export_data ():
         export_name = 'SA_data/' + file_name_var.get() + '.csv'
 
     if two_vars:
-        export_array = np.rot90(np.array(freq_vals, [figure_vars[0][1][1], figure_vars[1][1][1]]))
+        export_array = np.rot90(np.array([freq_vals, figure_vars[0][1][1], figure_vars[1][1][1]]))
         export_header = ' Frequency (Hz)' + ',' + figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2] + ',' + figure_vars[1][1][0][0][0] + ' ' + figure_vars[1][1][0][2]
     else:
         export_array = np.rot90(np.array([freq_vals, figure_vars[0][1][1]]))
