@@ -74,10 +74,10 @@ def refresh_overload ():
 def make_im_list ():
     im_list =['A Amplitude', 'A Phase', 'B Amplitude', 'B Phase', 'Transfer Amplitude', 'Transfer Phase', 'Coherance']
     if y_scale_var.get() == 1:
-        amp_type = 'Amplitude (V)'
+        amp_type = ''
     else:
-        amp_type = 'Amplitude (dB)'
-    im_data_types = [amp_type, 'Phase (Deg)', amp_type, 'Phase (Deg)', amp_type, 'Phase (Deg)', 'Coherance (UL)']
+        amp_type = 'dB'
+    im_data_types = [amp_type + 'V', 'Deg', amp_type + 'V', 'Deg', amp_type, 'Deg', '']
     im_list = list(zip(im_list, input_mode_vars, im_data_types))
     return im_list
 
@@ -224,7 +224,7 @@ def redraw_display (*args):
             ax[i].set_xlabel('Frequency (Hz)')
             ax[i].set_ylabel(x[0][2])
             ax[i].grid(which='both')
-            ax[i].axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
+            ax[i].axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1, label= str("%.2f" % freq_vals[display_slider_var.get()]) + 'Hz, ' + str("%.2f" % x[1][display_slider_var.get()]) + x[0][2])
             ax[i].axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1)
             if display_toggle_on.get():
                 ax[i].legend()
@@ -240,7 +240,7 @@ def redraw_display (*args):
             ax.set_xlabel('Frequency (Hz)')
             ax.set_ylabel(x[0][2])
             ax.grid(which='both')
-            ax.axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
+            ax.axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1, label=str("%.2f" % freq_vals[display_slider_var.get()]) + 'Hz, ' + str("%.2f" % x[1][display_slider_var.get()])+ x[0][2])
             ax.axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1)
             if display_toggle_on.get():
                 ax.legend()
@@ -259,10 +259,10 @@ def export_data ():
 
     if two_vars:
         export_array = np.rot90(np.array([freq_vals, figure_vars[0][1][1], figure_vars[1][1][1]]))
-        export_header = ' Frequency (Hz)' + ',' + figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2] + ',' + figure_vars[1][1][0][0][0] + ' ' + figure_vars[1][1][0][2]
+        export_header = ' Frequency (Hz)' + ',' + figure_vars[0][1][0][0] + ' ' + figure_vars[0][1][0][2] + ',' + figure_vars[1][1][0][0] + ' ' + figure_vars[1][1][0][2]
     else:
         export_array = np.rot90(np.array([freq_vals, figure_vars[0][1][1]]))
-        export_header = 'Frequency (Hz)' + ',' + figure_vars[0][1][0][0][0] + ' ' + figure_vars[0][1][0][2]
+        export_header = 'Frequency (Hz)' + ',' + figure_vars[0][1][0][0] + ' ' + figure_vars[0][1][0][2]
     
     np.savetxt(export_name, export_array, header=export_header, delimiter=',', comments='')
 
