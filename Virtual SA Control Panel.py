@@ -224,8 +224,8 @@ def redraw_display (*args):
             ax[i].set_xlabel('Frequency (Hz)')
             ax[i].set_ylabel(x[0][2])
             ax[i].grid(which='both')
-            ax[i].axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
-            ax[i].axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1)
+            ax[i].axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
+            ax[i].axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1)
             if display_toggle_on.get():
                 ax[i].legend()
             
@@ -240,8 +240,8 @@ def redraw_display (*args):
             ax.set_xlabel('Frequency (Hz)')
             ax.set_ylabel(x[0][2])
             ax.grid(which='both')
-            ax.axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
-            ax.axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color='grey', lw=1)
+            ax.axvline(x=freq_vals[display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1, label=str(freq_vals[display_slider_var.get()]) + ', ' + str(x[1][display_slider_var.get()]))
+            ax.axhline(y=x[1][display_slider_var.get()], visible=display_toggle_on.get(), color=cursor_color, lw=1)
             if display_toggle_on.get():
                 ax.legend()
     
@@ -280,11 +280,9 @@ def dis_slider_toggle ():
     if display_toggle_on.get() == 1:
         display_toggle.configure(relief=tk.RAISED)
         display_toggle_on.set(0)
-        display_toggle_var.set('Off')
     else:
         display_toggle.configure(relief=tk.SUNKEN)
         display_toggle_on.set(1)
-        display_toggle_var.set('On')
     redraw_display()
 
 
@@ -348,7 +346,8 @@ font_small = ("Arial", 12)
 font_big = ("Arial", 18)
 display_slider_var = tk.IntVar(value=0)
 display_toggle_on = tk.BooleanVar(value=False)
-display_toggle_var = tk.StringVar(value='Off')
+display_toggle_var = tk.StringVar(value='Toggle\nCursor')
+cursor_color = 'black'
 
 #Make a frame to put the display into
 display = tk.Frame(content, highlightbackground="grey", highlightthickness=2)
@@ -367,11 +366,11 @@ display_slider = tk.Scale(display, from_=0, to=127, variable=display_slider_var,
 display_toggle = tk.Button(display, relief=tk.RAISED, font=font_small, textvariable=display_toggle_var, command=dis_slider_toggle)
 
 #grid display
-tool_bar.grid(row=13, column=0, rowspan=2, columnspan=15, sticky='nwes')
+tool_bar.grid(row=13, column=0, rowspan=2, columnspan=14, sticky='nwes')
 data_display.get_tk_widget().grid(row=0, column=0, columnspan=15, rowspan=12, sticky='nwes')
 display_slider_label.grid(row=12, column=0, sticky='nwes')
 display_slider.grid(row=12, column=1, columnspan=13, sticky='we')
-display_toggle.grid(row=12, column=14, sticky='nwes')
+display_toggle.grid(row=12, column=14, rowspan=3, sticky='nwes')
 row_col_config(display, rows=[1]*12, columns=[1]*15)
 
 #Make a frame to put the trace buttons in
